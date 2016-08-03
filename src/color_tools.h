@@ -1,0 +1,1 @@
+GLubyte *init_colors(uint16_t size);
