@@ -2,29 +2,6 @@
 #include <stdlib.h> 
 #include "color_tools.h" 
 
-/*GLubyte *make_color_gradient(
-	uint32_t size, 
-	GLubyte r1, GLubyte g1, GLubyte b1, 
-	GLubyte r2, GLubyte g2, GLubyte b2
-) {
-	GLubyte *buffer = malloc(3 * (size + 1) * sizeof(GLubyte));
-	double diff_r = (r2 - r1)/(double)size;
-	double diff_g = (g2 - g1)/(double)size;
-	double diff_b = (b2 - b1)/(double)size;
-
-	uint32_t i;
-	for(i=0; i<size; i++) {
-
-		buffer[3 * i] = (diff_r * (i + 1) + r1);
-		buffer[3 * i + 1] =  (diff_g * (i + 1) + g1);
-		buffer[3 * i + 2] = (diff_b * (i + 1) + b1);
-	}
-	buffer[size * 3] = 0;
-	buffer[size * 3 + 1] = 0;
-	buffer[size * 3 + 2] = 0;
-	return buffer;
-}*/
-
 void make_color_gradient(
 	GLubyte *color_buffer,
 	uint32_t offset,

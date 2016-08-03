@@ -6,10 +6,7 @@
 #include "settings.h"
 #include "mandelbrot.h"
 
-int textureId;
-
 GLubyte *make_canvas(uint32_t w, uint32_t h ) {
-	glGenTextures (1, &textureId);
 	return malloc(w * h * 3 * sizeof(GLubyte));
 }
 
