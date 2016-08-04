@@ -14,7 +14,6 @@ zoom_state *zoom;
 
 
 void display() {
-   int x,y;
    calculate_mandelbrot(canvas, color_buffer, zoom->w, zoom->h, zoom->x0, zoom->x1, zoom->y0, zoom->y1);
    draw_canvas(canvas, CANVAS_W, CANVAS_H);
    if(zoom->debug) {
