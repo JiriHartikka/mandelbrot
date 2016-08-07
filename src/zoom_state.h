@@ -3,11 +3,15 @@ typedef struct {
 	//window width and height
 	uint32_t w, h;
 	//window position
-	long double x0, x1, y0, y1;
+	mandelbrot_f x0, x1, y0, y1;
+	//maximum number of iterations
+	uint32_t max_iter;
 	//display debug info
 	char debug;
+	//scaling factor for window
+	mandelbrot_f window_scale;
 } zoom_state;
 
-zoom_state *make_zoom_state(uint32_t w, uint32_t h, char debug, long double x0, long double x1, long double y0, long double y1);
-void zoom_focus(zoom_state *zoom, long double x, long double y, float zoomFactor);
+zoom_state *make_zoom_state(uint32_t w, uint32_t h, char debug, mandelbrot_f x0, mandelbrot_f x1, mandelbrot_f y0, mandelbrot_f y1, uint32_t max_iter, mandelbrot_f window_scale);
+void zoom_focus(zoom_state *zoom, mandelbrot_f x, mandelbrot_f y, float zoomFactor);
 void display_depth(zoom_state *zoom);
