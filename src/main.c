@@ -140,11 +140,7 @@ void onMouseClick(int button, int state, int x, int y) {
 } 
 
 int main(int argc, char** argv) {
-   mandelbrot_f x0 = -2.5, x1 = 1.0, y0 = -1.0, y1 = 1.0;
-   int debug = 0;
-
    struct arguments arguments;
-
    arguments.x0 = -2.5;
    arguments.x1 = 1.0;
    arguments.y0 = -1.0;
@@ -157,12 +153,9 @@ int main(int argc, char** argv) {
 
    argp_parse(&argp, argc, argv, 0, 0, &arguments);
    adjust_aspect_ratio(&arguments);
-
    canvas = make_canvas(arguments.w, arguments.h);
    zoom = make_zoom_state(arguments.w, arguments.h, arguments.debug, arguments.x0, arguments.x1, arguments.y0, arguments.y1, arguments.max_iteration, arguments.window_scale);
    color_buffer = init_colors(arguments.max_iteration);
-   int i;
-   glEnable(GL_TEXTURE_RECTANGLE);
    glutInit(&argc, argv);  
    glutInitWindowSize(arguments.w * arguments.window_scale, arguments.h * arguments.window_scale);
    glutInitWindowPosition(0, 0);
