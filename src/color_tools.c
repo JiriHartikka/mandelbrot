@@ -1,12 +1,12 @@
 #include <GL/gl.h>
-#include <stdlib.h> 
-#include "color_tools.h" 
+#include <stdlib.h>
+#include "color_tools.h"
 
 void make_color_gradient(
 	GLubyte *color_buffer,
 	uint32_t offset,
-	uint32_t size, 
-	GLubyte r1, GLubyte g1, GLubyte b1, 
+	uint32_t size,
+	GLubyte r1, GLubyte g1, GLubyte b1,
 	GLubyte r2, GLubyte g2, GLubyte b2
 ) {
 	double diff_r = (r2 - r1)/(double)size;
@@ -28,37 +28,44 @@ GLubyte *init_colors(uint16_t size) {
 		buffer,
 		0,
 		chunk_size,
-		255, 255, 255,
-		237, 117, 33
+		0, 0, 255,
+		0, 255, 255
 	);
 	make_color_gradient(
 		buffer,
 		chunk_size,
 		chunk_size,
-		237, 117, 33,
-		129, 132, 243
+		0, 255, 255,
+		0, 255, 0
 	);
 	make_color_gradient(
 		buffer,
 		2 * chunk_size,
 		chunk_size,
-		129, 132, 243,
-		49, 155, 56
+		0, 255, 0,
+		255, 255, 0
 	);
 	make_color_gradient(
 		buffer,
 		3 * chunk_size,
 		chunk_size,
-		49, 155, 56,
-		209, 16, 16
+		255, 255, 0,
+		198, 26, 255
 	);
 	make_color_gradient(
 		buffer,
 		4 * chunk_size,
 		chunk_size,
-		209, 16, 16,
-		41, 17, 44
+		198, 26, 255,
+		255, 0, 0
 	);
+  /*make_color_gradient(
+		buffer,
+		5 * chunk_size,
+		chunk_size,
+		255, 0, 0,
+		0, 0, 255
+	);*/
 	for(i = 5 * chunk_size; i <= size; i++) {
 		buffer[i * 3] = 0;
 		buffer[i * 3 + 1] = 0;

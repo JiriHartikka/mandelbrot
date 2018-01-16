@@ -1,8 +1,8 @@
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <GL/gl.h>
-#include <GL/glut.h> 
+#include <GL/glut.h>
 #include "settings.h"
 #include "zoom_state.h"
 

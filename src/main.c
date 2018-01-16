@@ -1,9 +1,11 @@
 
 #include <GL/gl.h>
-#include <GL/glut.h> 
+#include <GL/glut.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <argp.h>
+#include <string.h>
+#include <inttypes.h>
 #include "settings.h"
 #include "mandelbrot.h"
 #include "zoom_state.h"
@@ -24,14 +26,17 @@ static struct argp_option options[] = {
    {"width", 'w', "INT", 0, "Width of the canvas."},
    {"height", 'h', "INT", 0, "Height of the canvas."},
    {"scale-window", 's', "FLOAT", 0, "Scales the window by the given factor (without affecting the resolution)."},
+   {"fractal-name", 'f', "STRING", 0, "Fractal to use. Default = mandelbrot."},
    { 0 }
 };
 
 struct arguments {
    mandelbrot_f x0, x1, y0, y1;
+   //uint16_t max_iteration;
    int debug;
    uint32_t w, h, max_iteration;
    mandelbrot_f window_scale;
+   char *fractal_name;
 };
 
 void try_parse_f(mandelbrot_f *to_parse, char *input) {
@@ -40,6 +45,16 @@ void try_parse_f(mandelbrot_f *to_parse, char *input) {
 
 void try_parse_i(uint32_t *to_parse, char *input) {
    sscanf(input, "%d", to_parse);
+}
+
+//void try_parse_uint16_t(uint16_t *to_parse, char *input) {
+//  sscanf(input, "%" SCNd16, to_parse);
+//}
+
+void try_parse_s(char **to_parse, char *input) {
+   printf("HELLO\n");
+   *to_parse = malloc(strlen(input) + 1);
+   strcpy(*to_parse, input);
 }
 
 static error_t parse_opt (int key, char *arg, struct argp_state *state) {
@@ -78,6 +93,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       case 'd':
          arguments->debug = 1;
       break;
+      case 'f':
+         try_parse_s(&arguments->fractal_name, arg);
+      break;
       case ARGP_KEY_END:
       break;
       default:
@@ -113,22 +131,28 @@ void adjust_aspect_ratio(struct arguments *arguments) {
 GLubyte *canvas;
 GLubyte *color_buffer;
 zoom_state *zoom;
-
+GLuint texture;
+//function pointer for the escape time algorithm of the fractal to use
+uint16_t (*escape_time)(mandelbrot_f, mandelbrot_f, uint32_t);
+uint16_t max_iteration;
 
 void display() {
-   calculate_mandelbrot(canvas, color_buffer, zoom->w, zoom->h, zoom->x0, zoom->x1, zoom->y0, zoom->y1, zoom->max_iter);
-   draw_canvas(canvas, zoom->w, zoom->h, zoom->window_scale);
+  calculate_mandelbrot(canvas, color_buffer, zoom->w, zoom->h, zoom->x0, zoom->x1, zoom->y0, zoom->y1, zoom->max_iter);
+
+  draw_canvas(canvas, texture, zoom->w, zoom->h, zoom->window_scale);
+  glutSwapBuffers();
+
    if(zoom->debug) {
       display_depth(zoom);
    }
-   glFlush();
+   //glFlush();
 }
 
 void onMouseClick(int button, int state, int x, int y) {
    mandelbrot_f dx = (zoom->x1 - zoom->x0) / zoom->w;
    mandelbrot_f dy = (zoom->y1 - zoom->y0) / zoom->h;
    mandelbrot_f x_new = zoom->x0 + x * (1 / zoom->window_scale) * dx;
-   mandelbrot_f y_new = zoom->y0 + y * (1 / zoom->window_scale) * dy;   
+   mandelbrot_f y_new = zoom->y0 + (zoom->h - y) * (1 / zoom->window_scale) * dy;
 
    if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
       zoom_focus(zoom, x_new, y_new, 2.0);
@@ -137,7 +161,7 @@ void onMouseClick(int button, int state, int x, int y) {
       zoom_focus(zoom, zoom->x0 + (zoom->x1 - zoom->x0) / 2 , zoom->y0 + (zoom->y1 - zoom->y0) / 2, 0.5);
       display();
    }
-} 
+}
 
 int main(int argc, char** argv) {
    struct arguments arguments;
@@ -150,18 +174,45 @@ int main(int argc, char** argv) {
    arguments.max_iteration = DEFAULT_MAX_ITER;
    arguments.debug = 0;
    arguments.window_scale = 1.0;
+   arguments.fractal_name = "mandelbrot";
 
    argp_parse(&argp, argc, argv, 0, 0, &arguments);
+
+   printf("fractal name: %s\n", arguments.fractal_name);
+
+   if(strcmp(arguments.fractal_name, "mandelbrot") == 0) {
+      escape_time = escape_time_mandelbrot;
+   }
+   else if(strcmp(arguments.fractal_name, "burning_ship") == 0) {
+      escape_time = escape_time_burning_ship;
+   }
+   else if(strcmp(arguments.fractal_name, "z3") == 0) {
+      escape_time = escape_time_z3;
+   }
+   else {
+      printf("Error: Invalid argument --fractal-name %s\n", arguments.fractal_name);
+      return 2;
+   }
+
+   printf("esc_time at (1, 0) = %d\n", (*escape_time)(1.0, 0.0, arguments.max_iteration));
+
    adjust_aspect_ratio(&arguments);
    canvas = make_canvas(arguments.w, arguments.h);
    zoom = make_zoom_state(arguments.w, arguments.h, arguments.debug, arguments.x0, arguments.x1, arguments.y0, arguments.y1, arguments.max_iteration, arguments.window_scale);
-   color_buffer = init_colors(arguments.max_iteration);
-   glutInit(&argc, argv);  
+   //color_buffer = init_colors(arguments.max_iteration);
+   color_buffer = init_colors(10001);
+
+   glutInit(&argc, argv);
+   glutInitDisplayMode(GLUT_DOUBLE);
    glutInitWindowSize(arguments.w * arguments.window_scale, arguments.h * arguments.window_scale);
-   glutInitWindowPosition(0, 0);
+   //glutInitWindowPosition(0, 0);
    glutCreateWindow("Mandelbrot");
-   glutDisplayFunc(display); 
+   //calculate_mandelbrot(canvas, color_buffer, zoom->w, zoom->h, zoom->x0, zoom->x1, zoom->y0, zoom->y1, zoom->max_iter);
+   init_canvas(canvas, &texture, arguments.w, arguments.h);
+   //draw_canvas(canvas, texture, zoom->w, zoom->h, zoom->window_scale);
+   glutDisplayFunc(display);
    glutMouseFunc(onMouseClick);
-   glutMainLoop();           
+   glutMainLoop();
+   // getchar();
    return 0;
 }
