@@ -10,6 +10,7 @@
 #include "mandelbrot.h"
 #include "zoom_state.h"
 #include "color_tools.h"
+#include "canvas.h"
 
 static char doc[] =
   "Mandelbrot -- a simple interactive Mandelbrot set zoomer in openGL.";
@@ -32,7 +33,6 @@ static struct argp_option options[] = {
 
 struct arguments {
    mandelbrot_f x0, x1, y0, y1;
-   //uint16_t max_iteration;
    int debug;
    uint32_t w, h, max_iteration;
    mandelbrot_f window_scale;
@@ -47,12 +47,7 @@ void try_parse_i(uint32_t *to_parse, char *input) {
    sscanf(input, "%d", to_parse);
 }
 
-//void try_parse_uint16_t(uint16_t *to_parse, char *input) {
-//  sscanf(input, "%" SCNd16, to_parse);
-//}
-
 void try_parse_s(char **to_parse, char *input) {
-   printf("HELLO\n");
    *to_parse = malloc(strlen(input) + 1);
    strcpy(*to_parse, input);
 }
@@ -128,24 +123,19 @@ void adjust_aspect_ratio(struct arguments *arguments) {
    }
 }
 
-GLubyte *canvas;
 GLubyte *color_buffer;
 zoom_state *zoom;
-GLuint texture;
-//function pointer for the escape time algorithm of the fractal to use
-uint16_t (*escape_time)(mandelbrot_f, mandelbrot_f, uint32_t);
 uint16_t max_iteration;
 
 void display() {
-  calculate_mandelbrot(canvas, color_buffer, zoom->w, zoom->h, zoom->x0, zoom->x1, zoom->y0, zoom->y1, zoom->max_iter);
+  calculate_fractal(color_buffer, zoom->x0, zoom->x1, zoom->y0, zoom->y1, zoom->max_iter);
 
-  draw_canvas(canvas, texture, zoom->w, zoom->h, zoom->window_scale);
+  draw_canvas();
   glutSwapBuffers();
 
    if(zoom->debug) {
       display_depth(zoom);
    }
-   //glFlush();
 }
 
 void onMouseClick(int button, int state, int x, int y) {
@@ -175,6 +165,7 @@ int main(int argc, char** argv) {
    arguments.debug = 0;
    arguments.window_scale = 1.0;
    arguments.fractal_name = "mandelbrot";
+   float (*escape_time)(mandelbrot_f, mandelbrot_f, uint32_t);
 
    argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
@@ -189,30 +180,26 @@ int main(int argc, char** argv) {
    else if(strcmp(arguments.fractal_name, "z3") == 0) {
       escape_time = escape_time_z3;
    }
+   else if(strcmp(arguments.fractal_name, "tan_mixture") == 0) {
+     escape_time = escape_time_tan_mixture;
+   }
    else {
       printf("Error: Invalid argument --fractal-name %s\n", arguments.fractal_name);
       return 2;
    }
 
-   printf("esc_time at (1, 0) = %d\n", (*escape_time)(1.0, 0.0, arguments.max_iteration));
-
    adjust_aspect_ratio(&arguments);
-   canvas = make_canvas(arguments.w, arguments.h);
    zoom = make_zoom_state(arguments.w, arguments.h, arguments.debug, arguments.x0, arguments.x1, arguments.y0, arguments.y1, arguments.max_iteration, arguments.window_scale);
-   //color_buffer = init_colors(arguments.max_iteration);
-   color_buffer = init_colors(10001);
+   color_buffer = init_colors(MAX_COLOR_INDEX + 1);
 
    glutInit(&argc, argv);
    glutInitDisplayMode(GLUT_DOUBLE);
    glutInitWindowSize(arguments.w * arguments.window_scale, arguments.h * arguments.window_scale);
-   //glutInitWindowPosition(0, 0);
    glutCreateWindow("Mandelbrot");
-   //calculate_mandelbrot(canvas, color_buffer, zoom->w, zoom->h, zoom->x0, zoom->x1, zoom->y0, zoom->y1, zoom->max_iter);
-   init_canvas(canvas, &texture, arguments.w, arguments.h);
-   //draw_canvas(canvas, texture, zoom->w, zoom->h, zoom->window_scale);
+   init_canvas(arguments.w, arguments.h, escape_time);
+
    glutDisplayFunc(display);
    glutMouseFunc(onMouseClick);
    glutMainLoop();
-   // getchar();
    return 0;
 }

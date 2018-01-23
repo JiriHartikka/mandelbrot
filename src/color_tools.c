@@ -59,13 +59,6 @@ GLubyte *init_colors(uint16_t size) {
 		198, 26, 255,
 		255, 0, 0
 	);
-  /*make_color_gradient(
-		buffer,
-		5 * chunk_size,
-		chunk_size,
-		255, 0, 0,
-		0, 0, 255
-	);*/
 	for(i = 5 * chunk_size; i <= size; i++) {
 		buffer[i * 3] = 0;
 		buffer[i * 3 + 1] = 0;
