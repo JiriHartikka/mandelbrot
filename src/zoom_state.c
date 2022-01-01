@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <GL/gl.h>
 #include <GL/glut.h>
 #include "settings.h"
@@ -17,6 +18,8 @@ zoom_state *make_zoom_state(uint32_t w, uint32_t h, char debug, mandelbrot_f x0,
 	zoom->y1 = y1;
 	zoom->max_iter = max_iter;
 	zoom->window_scale = window_scale;
+	zoom->is_ready = false;
+	zoom->is_interrupted = false;
 	return zoom;
 }
 

@@ -10,6 +10,12 @@ typedef struct {
 	char debug;
 	//scaling factor for window
 	mandelbrot_f window_scale;
+	// is zooming ready, written by worker when a pass is ready and emptied by main
+	bool is_ready;
+	// written by idle func when zooming is ready and display is up to date
+	bool is_display_ready;
+	// is zooming interrupted, written by main on user input
+	bool is_interrupted;
 } zoom_state;
 
 zoom_state *make_zoom_state(uint32_t w, uint32_t h, char debug, mandelbrot_f x0, mandelbrot_f x1, mandelbrot_f y0, mandelbrot_f y1, uint32_t max_iter, mandelbrot_f window_scale);

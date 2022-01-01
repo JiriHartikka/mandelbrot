@@ -4,13 +4,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <argp.h>
+#include <pthread.h>
+#include <signal.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include <stdbool.h>
+#include <time.h>
 #include "settings.h"
 #include "mandelbrot.h"
 #include "zoom_state.h"
 #include "color_tools.h"
 #include "canvas.h"
+
+
 
 static char doc[] =
   "Mandelbrot -- a simple interactive Mandelbrot set zoomer in openGL.";
@@ -30,6 +38,11 @@ static struct argp_option options[] = {
    {"fractal-name", 'f', "STRING", 0, "Fractal to use. Default = mandelbrot."},
    { 0 }
 };
+
+// lazy fix implicit declaration warning in build 
+extern int setenv (const char *__name, const char *__value, int __replace);
+
+#define SLEEP() nanosleep((const struct timespec[]){{0, 20000000L}}, NULL)
 
 struct arguments {
    mandelbrot_f x0, x1, y0, y1;
@@ -128,14 +141,62 @@ zoom_state *zoom;
 uint16_t max_iteration;
 
 void display() {
-  calculate_fractal(color_buffer, zoom->x0, zoom->x1, zoom->y0, zoom->y1, zoom->max_iter);
-
-  draw_canvas();
-  glutSwapBuffers();
+   draw_canvas();
+   glutSwapBuffers();
 
    if(zoom->debug) {
       display_depth(zoom);
    }
+}
+
+void idle() {
+   if (zoom->is_ready && zoom->is_display_ready) {
+      SLEEP();
+      return;
+   }
+
+   if (zoom->is_ready && !zoom->is_display_ready) {
+      glutPostRedisplay();
+      zoom->is_display_ready = true;
+   }
+
+   SLEEP();
+   glutPostRedisplay();
+}
+
+void* worker_main() {
+
+   while (true) {
+
+      if (!zoom->is_interrupted) {
+         // wait for a new zoom event
+         SLEEP();
+         continue;
+      } else {
+         // zoom event, start working and "consume" the event
+         zoom->is_interrupted = false;
+      }
+
+      uint32_t chunk_size = zoom->w / 2;
+      zoom->is_ready = false;
+      zoom->is_display_ready = false;
+
+      do {
+         chunk_size /= 2;
+         calculate_fractal_iterative(color_buffer, zoom->x0, zoom->x1, zoom->y0, zoom->y1, zoom->max_iter, chunk_size);
+
+         if (zoom->is_interrupted) {
+            // zoom was interrupted, start over
+            zoom->is_ready = false;
+            zoom->is_display_ready = false;
+            break;
+         }
+      } while(chunk_size > 1);
+      // zooming has finished
+      zoom->is_ready = true;
+   }
+
+   pthread_exit(0);
 }
 
 void onMouseClick(int button, int state, int x, int y) {
@@ -146,11 +207,27 @@ void onMouseClick(int button, int state, int x, int y) {
 
    if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
       zoom_focus(zoom, x_new, y_new, 2.0);
-      display();
    } else if ( button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
       zoom_focus(zoom, zoom->x0 + (zoom->x1 - zoom->x0) / 2 , zoom->y0 + (zoom->y1 - zoom->y0) / 2, 0.5);
-      display();
    }
+
+   zoom->is_interrupted = true;
+}
+
+void check_and_set_omp_cancellation(char** argv) {
+   char *hasCancel = getenv("OMP_CANCELLATION");
+   if (hasCancel == NULL) {
+      printf("Bootstrapping OMP with cancellation capacity, restarting\n");
+      setenv("OMP_CANCELLATION", "true", 1);
+      // Restart the program
+      int output = execvp(argv[0], argv);
+      // Execution should not continue past here
+      printf("Bootstrapping failed with code %d\n",output);
+      exit(1);
+   } else {
+      printf("OMP_CANCELLATION is enabled\n");
+   }
+
 }
 
 int main(int argc, char** argv) {
@@ -166,6 +243,9 @@ int main(int argc, char** argv) {
    arguments.window_scale = 1.0;
    arguments.fractal_name = "mandelbrot";
    float (*escape_time)(mandelbrot_f, mandelbrot_f, uint32_t);
+   pthread_t worker_id;
+
+   check_and_set_omp_cancellation(argv);
 
    argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
@@ -188,8 +268,11 @@ int main(int argc, char** argv) {
       return 2;
    }
 
+
    adjust_aspect_ratio(&arguments);
    zoom = make_zoom_state(arguments.w, arguments.h, arguments.debug, arguments.x0, arguments.x1, arguments.y0, arguments.y1, arguments.max_iteration, arguments.window_scale);
+   // signal worker to compute
+   zoom->is_interrupted = true;
    color_buffer = init_colors(MAX_COLOR_INDEX + 1);
 
    glutInit(&argc, argv);
@@ -197,9 +280,12 @@ int main(int argc, char** argv) {
    glutInitWindowSize(arguments.w * arguments.window_scale, arguments.h * arguments.window_scale);
    glutCreateWindow("Mandelbrot");
    init_canvas(arguments.w, arguments.h, escape_time);
+   pthread_create(&worker_id, NULL, worker_main, NULL);
 
    glutDisplayFunc(display);
    glutMouseFunc(onMouseClick);
+   glutIdleFunc(idle);
    glutMainLoop();
+
    return 0;
 }

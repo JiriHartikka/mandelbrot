@@ -2,12 +2,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdbool.h>
 #include "settings.h"
 #include "mandelbrot.h"
 #include "color_tools.h"
 #include "canvas.h"
+#include "zoom_state.h"
 
 struct Canvas canvas;
+extern zoom_state *zoom;
 
 void init_canvas(uint32_t w, uint32_t h, ESCAPE_TIME_FUNC escape_time_func) {
   canvas.w = w;
@@ -75,4 +78,48 @@ void calculate_fractal(GLubyte *color_buffer, mandelbrot_f x0, mandelbrot_f x1, 
 			canvas.data[ GET_B(i, j, w) ] = color_buffer[color_index * 3 + 2];
     	}
     }
+}
+
+void calculate_fractal_iterative(
+  GLubyte *color_buffer,
+  mandelbrot_f x0,
+  mandelbrot_f x1,
+  mandelbrot_f y0,
+  mandelbrot_f y1,
+  uint32_t max_iter,
+  uint32_t chunk_size) {
+
+  const uint32_t w = canvas.w;
+  const uint32_t h = canvas.h;
+
+	const mandelbrot_f dx = (x1 - x0) / w;
+	const mandelbrot_f dy = (y1 - y0) / h;
+  
+  uint32_t count = 0; 
+
+  #pragma omp parallel for schedule(static,1) collapse(2)
+	for(int i = 0; i < w; i += chunk_size) {
+		for(int j = 0; j < h; j += chunk_size) {
+
+      // check if this computation sould be cancelled (user input, zoom event)
+      if (count++ % 1000 == 0) {
+        if (zoom->is_interrupted) {
+          #pragma omp cancel for
+        }
+      }
+      float esc_time = (canvas.escape_time)(x0 + (i + chunk_size / 2 ) * dx, y0 + (j + chunk_size / 2) * dy, max_iter);
+      //linear interpolation of color
+      uint16_t color_index = (esc_time / max_iter) * MAX_COLOR_INDEX;
+
+      // color the chunk (rectangle) by the test point (middle of the rectangle) escape time
+      for(int x = i; x < i + chunk_size && x < w; x++) {
+        for(int y = j; y < j + chunk_size && y < h; y++) {
+          canvas.data[ GET_R(x, y, w) ] = color_buffer[color_index * 3];
+          canvas.data[ GET_G(x, y, w) ] = color_buffer[color_index * 3 + 1];
+          canvas.data[ GET_B(x, y, w) ] = color_buffer[color_index * 3 + 2];      
+        } 
+      }
+
+    }
+  }
 }
