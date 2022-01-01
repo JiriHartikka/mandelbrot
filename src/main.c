@@ -150,11 +150,18 @@ void display() {
 }
 
 void idle() {
-   if (zoom->is_ready) {
-      zoom->is_ready = false;
-      glutPostRedisplay();
+   if (zoom->is_ready && zoom->is_display_ready) {
+      SLEEP();
+      return;
    }
+
+   if (zoom->is_ready && !zoom->is_display_ready) {
+      glutPostRedisplay();
+      zoom->is_display_ready = true;
+   }
+
    SLEEP();
+   glutPostRedisplay();
 }
 
 void* worker_main() {
@@ -162,23 +169,31 @@ void* worker_main() {
    while (true) {
 
       if (!zoom->is_interrupted) {
+         // wait for a new zoom event
          SLEEP();
          continue;
       } else {
+         // zoom event, start working and "consume" the event
          zoom->is_interrupted = false;
       }
 
       uint32_t chunk_size = zoom->w / 2;
+      zoom->is_ready = false;
+      zoom->is_display_ready = false;
 
       do {
          chunk_size /= 2;
          calculate_fractal_iterative(color_buffer, zoom->x0, zoom->x1, zoom->y0, zoom->y1, zoom->max_iter, chunk_size);
-         zoom->is_ready = true;
 
          if (zoom->is_interrupted) {
-            continue;
+            // zoom was interrupted, start over
+            zoom->is_ready = false;
+            zoom->is_display_ready = false;
+            break;
          }
       } while(chunk_size > 1);
+      // zooming has finished
+      zoom->is_ready = true;
    }
 
    pthread_exit(0);

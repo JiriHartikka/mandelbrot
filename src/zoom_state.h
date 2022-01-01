@@ -12,6 +12,8 @@ typedef struct {
 	mandelbrot_f window_scale;
 	// is zooming ready, written by worker when a pass is ready and emptied by main
 	bool is_ready;
+	// written by idle func when zooming is ready and display is up to date
+	bool is_display_ready;
 	// is zooming interrupted, written by main on user input
 	bool is_interrupted;
 } zoom_state;
