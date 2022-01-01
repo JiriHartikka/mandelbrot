@@ -12,3 +12,4 @@ struct Canvas {
 void init_canvas(uint32_t w, uint32_t h, ESCAPE_TIME_FUNC escape_time_func);
 void draw_canvas(void);
 void calculate_fractal(GLubyte *color_buffer, mandelbrot_f x0, mandelbrot_f x1, mandelbrot_f y0, mandelbrot_f y1, uint32_t max_iter);
+void calculate_fractal_iterative(GLubyte *color_buffer, mandelbrot_f x0, mandelbrot_f x1, mandelbrot_f y0, mandelbrot_f y1, uint32_t max_iter, uint32_t chunk_size);

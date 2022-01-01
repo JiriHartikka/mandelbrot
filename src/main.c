@@ -4,8 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <argp.h>
+#include <pthread.h>
 #include <string.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include "settings.h"
 #include "mandelbrot.h"
 #include "zoom_state.h"
@@ -128,14 +130,25 @@ zoom_state *zoom;
 uint16_t max_iteration;
 
 void display() {
-  calculate_fractal(color_buffer, zoom->x0, zoom->x1, zoom->y0, zoom->y1, zoom->max_iter);
+   uint32_t chunk_size = zoom->w / 2;
 
-  draw_canvas();
-  glutSwapBuffers();
+   do {
+      chunk_size /= 2;
+      calculate_fractal_iterative(color_buffer, zoom->x0, zoom->x1, zoom->y0, zoom->y1, zoom->max_iter, chunk_size);
 
-   if(zoom->debug) {
-      display_depth(zoom);
-   }
+      draw_canvas();
+      glutSwapBuffers();
+
+      if(zoom->debug) {
+         display_depth(zoom);
+      }
+  } while(chunk_size > 1);
+
+}
+
+void* worker_main() {
+   printf("Hello from worker\n");
+   pthread_exit(0);
 }
 
 void onMouseClick(int button, int state, int x, int y) {
@@ -167,6 +180,8 @@ int main(int argc, char** argv) {
    arguments.fractal_name = "mandelbrot";
    float (*escape_time)(mandelbrot_f, mandelbrot_f, uint32_t);
 
+   pthread_t worker_id;
+
    argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
    printf("fractal name: %s\n", arguments.fractal_name);
@@ -188,6 +203,7 @@ int main(int argc, char** argv) {
       return 2;
    }
 
+
    adjust_aspect_ratio(&arguments);
    zoom = make_zoom_state(arguments.w, arguments.h, arguments.debug, arguments.x0, arguments.x1, arguments.y0, arguments.y1, arguments.max_iteration, arguments.window_scale);
    color_buffer = init_colors(MAX_COLOR_INDEX + 1);
@@ -198,8 +214,13 @@ int main(int argc, char** argv) {
    glutCreateWindow("Mandelbrot");
    init_canvas(arguments.w, arguments.h, escape_time);
 
+   pthread_create(&worker_id, NULL, worker_main, NULL);
+
    glutDisplayFunc(display);
    glutMouseFunc(onMouseClick);
    glutMainLoop();
+
+   pthread_join(worker_id, NULL);
+
    return 0;
 }
