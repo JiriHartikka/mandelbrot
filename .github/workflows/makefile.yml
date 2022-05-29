@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: mymindstorm/setup-emsdk@v11
+    - uses: mymindstorm/setup-emsdk@v11
 
-      - name: Verify
-        run: emcc -v
+    - name: Verify
+      run: emcc -v
       
     - name: Install dependencies
       run: make web
