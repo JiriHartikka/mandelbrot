@@ -13,6 +13,7 @@ struct Canvas canvas;
 extern zoom_state *zoom;
 
 void init_canvas(uint32_t w, uint32_t h, ESCAPE_TIME_FUNC escape_time_func) {
+  printf("width %d, height %d\n", w, h);
   canvas.w = w;
   canvas.h = h;
   canvas.data = malloc(w * h * 3 * sizeof(GLubyte));
@@ -65,7 +66,7 @@ void calculate_fractal(GLubyte *color_buffer, mandelbrot_f x0, mandelbrot_f x1, 
 	const mandelbrot_f dx = (x1 - x0) / w;
 	const mandelbrot_f dy = (y1 - y0) / h;
 
-  #pragma omp parallel for schedule(static,1) collapse(2)
+  //#pragma omp parallel for schedule(static,1) collapse(2)
 	for(int i = 0; i < w; ++i) {
 		for(int j = 0; j < h; ++j) {
 
@@ -97,14 +98,15 @@ void calculate_fractal_iterative(
   
   uint32_t count = 0; 
 
-  #pragma omp parallel for schedule(static,1) collapse(2)
+  //#pragma omp parallel for schedule(static,1) collapse(2)
 	for(int i = 0; i < w; i += chunk_size) {
 		for(int j = 0; j < h; j += chunk_size) {
 
       // check if this computation sould be cancelled (user input, zoom event)
       if (count++ % 1000 == 0) {
         if (zoom->is_interrupted) {
-          #pragma omp cancel for
+          //#pragma omp cancel for
+          return;
         }
       }
       float esc_time = (canvas.escape_time)(x0 + (i + chunk_size / 2 ) * dx, y0 + (j + chunk_size / 2) * dy, max_iter);

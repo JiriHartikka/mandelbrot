@@ -1,7 +1,7 @@
 #define DEFAULT_CANVAS_H 800
 #define DEFAULT_CANVAS_W 1400
 
-#define DEFAULT_MAX_ITER 5000
+#define DEFAULT_MAX_ITER 200
 
 #define MIN(a,b) ((a) < (b) ? a : b)
 

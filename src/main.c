@@ -3,7 +3,7 @@
 #include <GL/glut.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <argp.h>
+//#include <argp.h>
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
@@ -18,14 +18,15 @@
 #include "color_tools.h"
 #include "canvas.h"
 
+int nanosleep(const struct timespec *req, struct timespec *rem);
 
 
-static char doc[] =
+/*static char doc[] =
   "Mandelbrot -- a simple interactive Mandelbrot set zoomer in openGL.";
 
-static char args_doc[] = "";
+static char args_doc[] = "";*/
 
-static struct argp_option options[] = {
+/*static struct argp_option options[] = {
    {"debug",   'd', 0,  0, "Display debug information on screen and stdout."},
    {"max-iteration",   'm', "INT",  0, "Maximum number of iterations in escape time calculation."},
    {"x0", 'x', "FLOAT", 0, "Smallest x coordinate on the screen."},
@@ -37,7 +38,7 @@ static struct argp_option options[] = {
    {"scale-window", 's', "FLOAT", 0, "Scales the window by the given factor (without affecting the resolution)."},
    {"fractal-name", 'f', "STRING", 0, "Fractal to use. Default = mandelbrot."},
    { 0 }
-};
+};*/
 
 // lazy fix implicit declaration warning in build 
 extern int setenv (const char *__name, const char *__value, int __replace);
@@ -65,9 +66,9 @@ void try_parse_s(char **to_parse, char *input) {
    strcpy(*to_parse, input);
 }
 
-static error_t parse_opt (int key, char *arg, struct argp_state *state) {
-  /* Get the input argument from argp_parse, which we
-     know is a pointer to our arguments structure. */
+/*static error_t parse_opt (int key, char *arg, struct argp_state *state) {
+  // Get the input argument from argp_parse, which we
+  //   know is a pointer to our arguments structure.
   struct arguments *arguments = state->input;
 
   mandelbrot_f parsed_f;
@@ -110,15 +111,15 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       return ARGP_ERR_UNKNOWN;
    }
   return 0;
-}
+}*/
 
-static struct argp argp = { options, parse_opt, args_doc, doc };
+//static struct argp argp = { options, parse_opt, args_doc, doc };
 
 
 void adjust_aspect_ratio(struct arguments *arguments) {
    //note: width needs to be divisible by 4 (glDrawPixels limitation)
    //quick hack: force width to nearest num divisible by 4.
-   mandelbrot_f dx = arguments->x1 - arguments->x0;
+   /*mandelbrot_f dx = arguments->x1 - arguments->x0;
    mandelbrot_f dy = arguments->y1 - arguments->y0;
    if(arguments->h == 0 && arguments->w == 0) {
       arguments->h = DEFAULT_CANVAS_H;
@@ -133,7 +134,11 @@ void adjust_aspect_ratio(struct arguments *arguments) {
       arguments->w = arguments->w + (4 - arguments->w % 4);
       //readjust height once more
       arguments->h = arguments->w * dy / dx;
-   }
+   }*/
+
+   arguments->h = 512;
+   arguments->w = 1024;
+
 }
 
 GLubyte *color_buffer;
@@ -141,6 +146,8 @@ zoom_state *zoom;
 uint16_t max_iteration;
 
 void display() {
+   //printf("Display event, swapping buffers\n");
+
    draw_canvas();
    glutSwapBuffers();
 
@@ -150,6 +157,9 @@ void display() {
 }
 
 void idle() {
+
+   //printf("idle...\n");
+
    if (zoom->is_ready && zoom->is_display_ready) {
       SLEEP();
       return;
@@ -160,12 +170,12 @@ void idle() {
       zoom->is_display_ready = true;
    }
 
+
    SLEEP();
    glutPostRedisplay();
 }
 
 void* worker_main() {
-
    while (true) {
 
       if (!zoom->is_interrupted) {
@@ -245,9 +255,9 @@ int main(int argc, char** argv) {
    float (*escape_time)(mandelbrot_f, mandelbrot_f, uint32_t);
    pthread_t worker_id;
 
-   check_and_set_omp_cancellation(argv);
+   //check_and_set_omp_cancellation(argv);
 
-   argp_parse(&argp, argc, argv, 0, 0, &arguments);
+   //argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
    printf("fractal name: %s\n", arguments.fractal_name);
 

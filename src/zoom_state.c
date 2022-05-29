@@ -40,6 +40,6 @@ void display_depth(zoom_state *zoom) {
 	double dx = zoom->x1 - zoom->x0;
 	double dy = zoom->y1 - zoom->y0;
 	sprintf(message, "dx = %.3le	dy = %.3le", dx, dy);
-	glutBitmapString(GLUT_BITMAP_HELVETICA_12, message);
+	//glutBitmapString(GLUT_BITMAP_HELVETICA_12, message);
 	glPopAttrib();
 }
