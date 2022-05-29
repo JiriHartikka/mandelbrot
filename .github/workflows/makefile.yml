@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: lovasoa/setup-emscripten@master
-      with:
-        emscripten-version: '1.38.47'
-    - uses: actions/checkout@v3
+      - uses: mymindstorm/setup-emsdk@v11
+
+      - name: Verify
+        run: emcc -v
       
     - name: Install dependencies
       run: make web
