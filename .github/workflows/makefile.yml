@@ -10,6 +10,7 @@ jobs:
 
     steps:
     - uses: mymindstorm/setup-emsdk@v11
+    - uses: actions/checkout@v3
 
     - name: Verify
       run: emcc -v
