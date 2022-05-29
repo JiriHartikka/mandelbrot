@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: lovasoa/setup-emscripten@master
       with:
-        emscripten-version: '3.1.2'
+        emscripten-version: '1.38.47'
     - uses: actions/checkout@v3
       
     - name: Install dependencies
