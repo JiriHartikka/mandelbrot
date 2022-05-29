@@ -6,6 +6,19 @@ Draws images on multiple passes enhanching the level of detail in each pass for 
 ![mandelbrot_interactive_zoom](docs/mandelbrot_zoom.gif)
 
 # Usage
+
+## WASM using emscripten
+The branch emscripten has a working proof of concept for compiling to WASM using emscripten. The resulting web app is hosted at https://emscripten-mandelbrot.pages.dev/. 
+
+The deployment to cloudfront is automated by using github actions and cloudfront github integration. There is a github actions workflow, which builds and deploys any incoming commit to emscripten branch gh-pages branch. The cloudflare github integration then deploys everything inside the gh-pages to the cloudfront. There is a manually added _headers file which tells the cloudfront to add 
+```
+cross-origin-embedder-policy: require-corp
+cross-origin-opener-policy: same-origin  
+```
+response headers which are required in order to support multithreaded wasm applications using SharedArrayBuffer. 
+
+## Building locally with gcc
+
 Build using make. Built only linux in mind, but any platform with gcc, openGL and GLUT might work, I suppose.
 
 Run the executable. Use mouse left click to zoom in, right click to zoom out.
@@ -40,4 +53,3 @@ The precision of long double limits the depth to which you can zoom. One can zoo
 
 # Settings
 Zooming in might take couple of seconds depending on the "complexity" of the current scene. One can speed up the painting by playing with "settings.h" options and recompiling. Reducing the size of the canvas or the maximum number of iterations will significantly improve speed at the cost of image prettiness. 
-
