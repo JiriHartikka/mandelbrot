@@ -1,5 +1,5 @@
 
 # this file is used by cloudflare to add appropriate headers
-https://ftxui-minimal.pages.dev/*
+https://emscripten-mandelbrot.pages.dev/*
     cross-origin-embedder-policy: require-corp
     cross-origin-opener-policy: same-origin
