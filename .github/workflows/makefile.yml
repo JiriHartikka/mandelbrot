@@ -1,0 +1,18 @@
+name: Build and publish emscripten
+
+on:
+  push:
+    branches: [ emscripten ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: lovasoa/setup-emscripten@master
+      with:
+        emscripten-version: '3.1.2'
+    - uses: actions/checkout@v3
+      
+    - name: Install dependencies
+      run: make web
